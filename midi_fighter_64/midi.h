@@ -45,12 +45,9 @@ typedef struct USB_MIDI_EventPacket
 // MIDI global variables -------------------------------------------------------
 
 extern USB_ClassInfo_MIDI_Device_t* g_midi_interface_info;
-extern uint8_t g_bank_selected;
 extern uint8_t G_EE_MIDI_CHANNEL;
 extern uint8_t G_EE_MIDI_VELOCITY;
-extern uint8_t g_midi_note_state[2][MIDI_MAX_NOTES]; //[0]=Midi Feedback, [1]=Animation State
-extern uint8_t g_midi_note_off_counter[MIDI_MAX_NOTES]; //
-extern uint16_t g_bank_select_counter[NUM_BANKS]; //
+extern uint8_t g_midi_note_off_counter[NUM_BUTTONS]; // ableton anti-flicker
 extern uint8_t g_midi_sysex_channel;
 
 extern bool g_midi_sysex_is_reading;
@@ -65,9 +62,6 @@ void midi_stream_note_ch(const uint8_t channel, const uint8_t note, const bool o
 void midi_stream_note(const uint8_t note, const bool onoff);
 void midi_stream_cc(const uint8_t cc, const uint8_t value);
 void midi_flush(void);
-uint8_t midipos_to_keypos(const uint8_t notepos);
-uint8_t midi_fourbanks_note_to_key(const uint8_t note);
-uint8_t midi_fourbanks_key_to_note(const uint8_t keynum);
 uint8_t midi_64_key_to_note(const uint8_t keynum);
 
 
@@ -81,7 +75,6 @@ void midi_stream_raw_cc(const uint8_t channel,
                         const uint8_t cc,
                         const uint8_t value);
 
-void midi_stream_sysex_identify(void);
 void midi_stream_sysex (const uint8_t length, uint8_t* data);
 
 void midi_clock(void);

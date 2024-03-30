@@ -69,14 +69,8 @@ void led_set_state_dfu(void);
 void rainbow_setup(void);
 bool rainbow_run(uint8_t *buffer);
 
-void ball_demo_setup(void);
-void ball_demo_run(uint8_t *buffer);
-
-// Tests
-#if ENABLE_TEST_IN_LED_CALIBRATION > 0
-void led_calibration_test(void);
-void led_set_test_colors(uint8_t red, uint8_t green, uint8_t blue);
-#endif
+//void ball_demo_setup(void);
+//void ball_demo_run(uint8_t *buffer);
 
 // -----------------------------------
 

@@ -36,9 +36,6 @@ extern const uint8_t gamma8_table[256];
 void set_seed16(uint16_t seed);
 uint16_t random16(void);
 
-void set_seed32(uint32_t seed);
-uint32_t random32(void);
-
 int8_t sintable(uint8_t angle);
 uint8_t lerp(uint8_t high, uint8_t low, uint8_t t);
 int8_t clamp(int8_t value, int8_t low, int8_t high);

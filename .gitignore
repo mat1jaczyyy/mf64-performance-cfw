@@ -1,3 +1,6 @@
+.vscode
+.vs
+
 # Prerequisites
 *.d
 
@@ -30,3 +33,11 @@
 *.exe
 *.out
 *.app
+
+# Non-required build output
+*.eep
+*.elf
+*.lss
+*.lst
+*.map
+*.sym

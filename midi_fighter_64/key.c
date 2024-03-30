@@ -36,10 +36,9 @@ uint64_t g_key_state = 0;      // Current state of the keys after debounce.
 uint64_t g_key_prev_state = 0; // State of the keys when last polled.
 uint64_t g_key_up = 0;         // Key was released since last poll.
 uint64_t g_key_down= 0;       // Key was pressed since last poll.
-uint64_t g_key_bank_last_up = 0;         // Bank key was pressed in (for note off messages) 64: only supports two banks (1 bit per button)
 
-volatile uint16_t system_time_ms = 0; // 0 to 65 seconds
-uint16_t last_led_refresh_time_ms = 0;
+volatile uint32_t system_time_ms = 0; // 0 to 65 seconds
+uint32_t last_led_refresh_time_ms = 0;
 #define TIMER_TIMEOUT_1MS	0xD0
 
 // Key Functions --------------------------------------------------
@@ -68,7 +67,7 @@ void key_setup(void)
     PORTD |= KEY_LATCH;
 
     // Start the debounce buffer in an empty state.
-    memset(g_key_debounce_buffer, 0, DEBOUNCE_BUFFER_SIZE*sizeof(uint32_t));
+    memset(g_key_debounce_buffer, 0, sizeof(g_key_debounce_buffer));
 
     // Setup TIMER0 to trigger an overflow interrupt 1000 times a second.
     // Our counter is incremented every 256 / 16000000 = 0.000016 seconds.

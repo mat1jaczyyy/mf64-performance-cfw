@@ -37,9 +37,11 @@
 // SysEx types     -----------------------------------------------
 
 // SysEx command handler function
-typedef void (*SysExFn)(uint8_t, uint8_t*);
+typedef void (*SysExFn)(uint16_t, uint8_t*);
 
 // SysEx functions -----------------------------------------------
+
+// Initialization
 
 // Install a new sysex message handler
 #define sysex_install(cmd,fn) sysex_install_(cmd, (SysExFn)fn)
@@ -53,5 +55,6 @@ void sysex_handle_3e (MIDI_EventPacket_t* packet);
 void sysex_handle_2e (MIDI_EventPacket_t* packet);
 // Handle a 1-byte end message
 void sysex_handle_1e (MIDI_EventPacket_t* packet);
+
 
 #endif // _SYSEX_H_INCLUDED

@@ -47,8 +47,9 @@ const USB_Descriptor_Device_t PROGMEM DeviceDescriptor =
     .SubClass               = 0x00,
     .Protocol               = 0x00,
     .Endpoint0Size          = FIXED_CONTROL_ENDPOINT_SIZE,
-    .VendorID               = 0x2580,  // DJ Techtools VID
-	.ProductID		        = 0x0008,  // 0x0001 MF Classic, 0x0002 MF Pro BM, 0x0003 MF Pro CM, 0x0004 MF Pro SN, 0x0005 MF 3D, 0x0007 Twister, 0x0008 64
+	// spoof vendor id for midi multiclient driver
+    .VendorID               = 0x1235,  // DJ Techtools VID
+	.ProductID		        = 0x0051,  // 0x0001 MF Classic, 0x0002 MF Pro BM, 0x0003 MF Pro CM, 0x0004 MF Pro SN, 0x0005 MF 3D, 0x0007 Twister, 0x0008 64
 	#if USE_LUFA_2015 > 0
     .ReleaseNumber          = VERSION_BCD(0,0,2),
     #else
@@ -248,9 +249,9 @@ const USB_Descriptor_String_t PROGMEM ManufacturerString =
 //
 const USB_Descriptor_String_t PROGMEM ProductString =
 {
-    .Header                 = { .Size = USB_STRING_LEN(15),
+    .Header                 = { .Size = USB_STRING_LEN(21),
                                 .Type = DTYPE_String },
-    .UnicodeString          = L"Midi Fighter 64"
+    .UnicodeString          = L"Midi Fighter 64 (CFW)"
 };
 
 /** Device Serial Numbers - We have four to allow users to user multiple MF3Ds at once

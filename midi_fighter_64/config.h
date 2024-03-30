@@ -32,8 +32,6 @@ void config_setup (void);
 void send_config_data (void);
 
 // Functions needed from elsewhere
-extern void change_bank(uint8_t this_bank);
-extern void send_change_bank_notification(uint8_t this_bank);
 extern void Midifighter_GetIncomingUsbMidiMessages(void);
 
 #endif // _SYSEX_H_INCLUDED

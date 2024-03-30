@@ -38,11 +38,9 @@ extern uint64_t g_key_state;      // Current state of the keys.
 extern uint64_t g_key_prev_state; // State of the keys when last polled.
 extern uint64_t g_key_up;         // Key was released since last poll.
 extern uint64_t g_key_down;       // Key was pressed since last poll.
-extern uint64_t g_key_bank_last_up;         // Bank key was pressed in (for note off messages) 64: only supports two banks (1 bit per button)
 
-#define LED_REFRESH_LIMIT 25 // 25 was working value
-extern volatile uint16_t system_time_ms; // 0 to 65 seconds
-extern uint16_t last_led_refresh_time_ms;
+extern volatile uint32_t system_time_ms; // 0 to 65 seconds
+extern uint32_t last_led_refresh_time_ms;
 
 // Interrupt service routine ---------------------------------------------------
 ISR(TIMER0_OVF_vect);

@@ -48,8 +48,6 @@ static const int8_t grad_table[32] PROGMEM = {
 
 // Valid seeds for the random number generators.
 static uint16_t g_seed16 = 36243;
-static uint32_t g_seed32 = 2463534242;
-
 
 // Mathematical functions -----------------------------------------------------
 
@@ -69,20 +67,6 @@ uint16_t random16(void)
     g_seed16 ^= (g_seed16 >> 9);
     g_seed16 ^= (g_seed16 << 7);
     return g_seed16;
-}
-
-
-// Set the seed for the 32-bit pseudorandom sequence.
-void set_seed32(uint32_t seed) { g_seed32 = seed; }
-
-// Return a 32-bit pseudorandom value.
-//
-uint32_t random32(void)
-{
-    g_seed32 ^= (g_seed32 << 13);
-    g_seed32 ^= (g_seed32 >> 17);
-    g_seed32 ^= (g_seed32 << 5);
-    return g_seed32;
 }
 
 // Sine and cosine functions.

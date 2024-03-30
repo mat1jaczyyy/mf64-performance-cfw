@@ -1,6 +1,6 @@
 # Hey Emacs, this is a -*- makefile -*-
 #----------------------------------------------------------------------------
-# WinAVR Makefile Template written by Eric B. Weddington, Jörg Wunsch, et al.
+# WinAVR Makefile Template written by Eric B. Weddington, Jï¿½rg Wunsch, et al.
 #  >> Modified for use with the LUFA project. <<
 #
 # Released to the Public Domain
@@ -133,19 +133,18 @@ include $(LUFA_PATH)/LUFA/makefile
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c                                                 \
-	  accel_gyro.c			  \
 	  eeprom.c				  \
 	  led.c					  \
 	  key.c					  \
 	  midi.c				  \
-	  combo.c                 \
 	  random.c				  \
 	  display.c	              \
-	  circular_buffer.c       \
 	  usb_descriptors.c	 	  \
 	  jumptoboot.c            \
 	  sysex.c                 \
 	  config.c	              \
+	  fastrgb.c	              \
+	  idle.c				  \
 	  $(LUFA_SRC_USB)		  \
 	  $(LUFA_SRC_USBCLASS)
 
@@ -168,7 +167,7 @@ ASRC =
 # Optimization level, can be [0, 1, 2, 3, s].
 #     0 = turn off optimization. s = optimize for size.
 #     (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
-OPT = s
+OPT = 2
 
 
 # Debugging format.
@@ -198,19 +197,6 @@ CDEFS  = -DF_CPU=$(F_CPU)UL
 CDEFS += -DF_USB=$(F_USB)UL
 CDEFS += -DBOARD=BOARD_$(BOARD) -DARCH=ARCH_$(ARCH)
 CDEFS += $(LUFA_OPTS)
-
-############# project specific defines ##################
-
-CDEFS += -DLIGHTSHOW
-CDEFS += -DCOMBO
-CDEFS += -DACCEL_GYRO
-#CDEFS += -DSLICER
-#CDEFS += -DSIDE_LOCK
-#CDEFS += -DSIDE_MIX
-#CDEFS += -DDEBUG
-#CDEFS += -DRGB_TEST
-#CDEFS += -DCOLOR_PICKER_APP
-
 
 # Place -D or -U options here for ASM sources
 ADEFS  = -DF_CPU=$(F_CPU)

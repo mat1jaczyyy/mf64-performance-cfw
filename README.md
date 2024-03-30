@@ -1,19 +1,22 @@
 # Midi Fighter 64 performance-optimized Custom Firmware
 
-This repository contains the source code of my custom firmware for the Launchpad Pro. The firmware retains all functionality (even Ableton Live integration) from the stock firmware in addition to Apollo Studio support. The modification is easy to install, free to use and works with every currently existing project or DAW.
+This repository contains the source code of my custom firmware for the [Midi Fighter 64](https://store.djtechtools.com/products/midi-fighter-64). Critically, this firmware enables Apollo Studio support and greatly enhances Ableton Live-based performances. The modification is easy to install, free to use and works with every currently existing Ableton Live project file.
 
 ## Installation
 
-Midi Fighter Utility
+Download the latest custom firmware file with the desired patches from the [Launchpad Utility](https://fw.mat1jaczyyy.com) with the `Midi Fighter 64 (CFW)` option selected.
+
+To upload the custom firmware to your Midi Fighter 64, use the official [Midi Fighter Utility](https://store.djtechtools.com/pages/midi-fighter-utility)'s Load Custom Firmware feature. Connect your Midi Fighter 64, and then navigate to `Tools` -> `Midifighter` -> `Load Custom Firmware` -> `For a 64` and select the downloaded firmware file.
 
 ## Building
 
-1. Open Atmel Studio
-2. On the start page or in the menu select
-"Open Project..."
-3. Select "Midi Fighter 64.atsln" from inside the midi_fighter_64 directory
-- It will be the one with the Red Atmel Studio Icon.
-4. Wait for the project to load up. Then press 'F7' (or click the menu Build->Build)
-- The project will build.
-- The output file will be located at "midi_fighter_64/Midi Fighter 64.hex"
-- This output file can be uploaded to a Midifighter 64 using the MIDI Fighter Utility's Load Custom Firmware feature.
+Prerequisites:
+- [Atmel Studio 7.0](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio#Downloads)
+- [WinAVR](https://sourceforge.net/projects/winavr/files/latest/download)
+    - **WARNING**: WinAVR will likely **COMPLETELY OVERWRITE YOUR SYSTEM PATH ENVIRONMENT VARIABLE**. Please ensure you have a backup of it before installing!
+        - If you end up losing your PATH variable, **do not reboot your machine** and follow the steps outlined [here](https://superuser.com/a/1127136).
+    - Patch WinAVR with a modified [msys-1.0.dll](https://www.madwizard.org/download/electronics/msys-1.0-vista64.zip) in `utils/bin`.
+
+Build `Midi Fighter 64.atsln` with Atmel Studio, and the output file will be located at `midi_fighter_64/midifighter64.hex`.
+
+To upload the final output file to a Midi Fighter 64, use the Midi Fighter Utility's Load Custom Firmware feature as explained in the Installation section.

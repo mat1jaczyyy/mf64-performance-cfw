@@ -49,17 +49,13 @@
 #define ENABLE_LUFA_2015_LARGE_PACKET_UPGRADE 0
 
 // - MIDI Feedback
-#define ENABLE_NOTE_OFF_FEEDBACK_DELAY 1
+#define ENABLE_NOTE_OFF_FEEDBACK_DELAY 2
 #define NOTE_OFF_FEEDBACK_DELAY_LIMIT 2 // !review: working value was 20, works at '1' with increased throughput, works at '2'
 #define DEBOUNCE_BUFFER_SIZE 10
 
 #define MIDI_FEEDBACK_MF3D_MODE 0  // 20 colors
 #define MIDI_FEEDBACK_ABLETON_MODE 1 // 15 2-bit dimable colors, 68 custom colors
-#define MIDI_FEEDBACK_MODE MIDI_FEEDBACK_ABLETON_MODE
 
-// - BANKING
-#define NUM_BANKS 2
-#define G_BANK_SELECT_COUNTER_LIMIT 1000
 // - Metric Testing
 #define ENABLE_TEST_OUT_MAINLOOP_COUNT 0
 #define ENABLE_TEST_OUT_LED_REFRESH_COUNT 0
@@ -107,11 +103,11 @@
 #define DEVICE_MODEL    	DEVICE_MODEL_LSB, DEVICE_MODEL_MSB
 
 // Should be the date of this firmware release, in hex, in the following format: 0xYYYYMMDD
-#define DEVICE_VERSION_YEAR 	0x2017
-#define DEVICE_VERSION_YEAR_LSB 0x17
-#define DEVICE_VERSION_YEAR_MSB 0x20
-#define DEVICE_VERSION_MONTH	0x07
-#define DEVICE_VERSION_DAY		0x24
+#define DEVICE_VERSION_YEAR 	0x3024
+#define DEVICE_VERSION_YEAR_LSB 0x24
+#define DEVICE_VERSION_YEAR_MSB 0x30
+#define DEVICE_VERSION_MONTH	0x03
+#define DEVICE_VERSION_DAY		0x20
 #define DEVICE_VERSION  		((DEVICE_VERSION_YEAR << 16) | (DEVICE_VERSION_MONTH << 8) | DEVICE_VERSION_DAY)
 
 // How many minutes of inactivity before sleep?
@@ -133,7 +129,7 @@
 #define MIDI_BASENOTE              36  // Note number for the lowest key.
 #define MIDI_SIDE_BASENOTE         20  // Note number for the highest side key
 #define MIDI_MAX_NOTES            128  // Number of notes to track.
-#define MIDI_MAX_SYSEX             64  // max number of bytes in a valid sysex message.
+#define MIDI_MAX_SYSEX            270  // max number of bytes in a valid sysex message.
 
 // EEPROM constants -----------------------------------------------------------
 
@@ -149,7 +145,7 @@
 #define EE_KEY_KEYPRESS_LED      0x0004  // Light the LED of pressed keys (bool)
 #define EE_FOUR_BANKS_MODE       0x0005  // Use Deckalized colors on the info display.
 #define EE_AUTO_UPDATE			 0x0008  // Legacy Four Banks Settings.
-#define EE_MIDI_OUTPUT_MODE         0x0009  // Rotation Setting 0 = defualt
+#define EE_MIDI_OUTPUT_MODE      0x0009  // Rotation Setting 0 = defualt
 #define EE_COMBOS_ENABLE		 0x000A  // Combos enabled (1-bit)
 #define EE_TILT_MODE             0x000C  // Tilt action Locked 0x00 or Mixed 0x01
 #define EE_TILT_MASK			 0x000D  // Masks midi for tilts MSB LEFT FWD RIGHT BACK Z_ABS _Z_REL 

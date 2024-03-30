@@ -26,6 +26,7 @@
 #include "midi.h"
 
 #include "led.h"
+#include "fastrgb.h"
 #include <util/delay.h>
 
 uint8_t sysex_buffer[MIDI_MAX_SYSEX];
@@ -37,14 +38,22 @@ enum {
     // Different types of messages to handle
     State_NonRealtime,  // Non Realtime Sysex message
     State_DJTT,         // Manufacturer ID verified as DJTT manufacturer ID
+	State_6F,
+	State_5F
 } sysex_state = State_Begin;
 
 #define MAX_COMMAND 8
 SysExFn sysExCommandMap[MAX_COMMAND] = {0,};
 
-void sysex_handle (uint8_t length)
+void sysex_handle (uint16_t length)
 {   
-    if (sysex_state == State_DJTT && length > 0) {
+	if (sysex_state == State_5F) {
+		fastrgb_decompress(sysex_buffer, sysex_buffer + length - 1);
+	}
+	else if (sysex_state == State_6F) {
+        fastrgb_list(sysex_buffer, sysex_buffer + length - 1);
+	}
+    else if (sysex_state == State_DJTT && length > 0) {
         // This is a DJTT SysEx message
         
         // First byte is the command byte
@@ -61,7 +70,6 @@ void sysex_handle (uint8_t length)
             sysex_buffer[1] == 0x01) {
             // Device identify request; send a Device Identify Response
 
-            //midi_stream_sysex_identify();
             uint8_t payload[] = {0xf0, 0x7e, 0x7f, 0x06, 0x02,
                                        0x00, MANUFACTURER_ID >> 8, MANUFACTURER_ID & 0x7f,
                                        DEVICE_FAMILY,
@@ -103,8 +111,7 @@ void sysex_handle_3sc (MIDI_EventPacket_t* packet)
         // check to see whether this sysex block is for us.
         if (packet->Data1 == 0xf0 &&
             packet->Data2 == 0x7e &&
-            (packet->Data3 == g_midi_sysex_channel ||
-                packet->Data3 == 0x7f)) {
+            packet->Data3 == 0x7f) {
             // Non realtime sysex
             // yay, it's for us! 
             sysex_state = State_NonRealtime;
@@ -114,7 +121,19 @@ void sysex_handle_3sc (MIDI_EventPacket_t* packet)
                    packet->Data3 == MIDI_MFR_ID_1) {
             // Might be for us...
             sysex_state = State_CheckMID;
-                       
+
+        } else if (packet->Data1 == 0xf0 &&
+				   packet->Data2 == 0x6f &&
+				   (sysex_ptr + 1) < buffer_end) {
+			sysex_state = State_6F;
+			*sysex_ptr++ = packet->Data3;
+
+        } else if (packet->Data1 == 0xf0 &&
+				   packet->Data2 == 0x5f &&
+				   (sysex_ptr + 1) < buffer_end) {
+			sysex_state = State_5F;
+			*sysex_ptr++ = packet->Data3;
+		
         } else {
             // Its not for us
             sysex_state = State_Invalid;
@@ -157,30 +176,37 @@ void sysex_handle_3sc (MIDI_EventPacket_t* packet)
 void sysex_handle_3e (MIDI_EventPacket_t* packet)
 {
     // 3-byte End of Sysex
-    sysex_is_reading = false;
-    
-    if (sysex_state == State_CheckMID) {
-        // Need to check third byte of manufacturer ID
-        if (packet->Data1 == MIDI_MFR_ID_2 &&
-            sysex_ptr + 2 < buffer_end) { // Should be the first two bytes read into buffer, so can't really overflow here, but check anyway
-            // Its for us!
-            sysex_state = State_DJTT;
-            *sysex_ptr++ = packet->Data2;
-            *sysex_ptr++ = packet->Data3;
-            
-            // Process the message
-            sysex_handle((uint8_t)(sysex_ptr - sysex_buffer));
+    if (sysex_is_reading) {
+        sysex_is_reading = false;
+        
+        if (sysex_state == State_CheckMID) {
+            // Need to check third byte of manufacturer ID
+            if (packet->Data1 == MIDI_MFR_ID_2 &&
+                sysex_ptr + 2 < buffer_end) { // Should be the first two bytes read into buffer, so can't really overflow here, but check anyway
+                // Its for us!
+                sysex_state = State_DJTT;
+                *sysex_ptr++ = packet->Data2;
+                *sysex_ptr++ = packet->Data3;
+                
+                // Process the message
+                sysex_handle((uint16_t)(sysex_ptr - sysex_buffer));
+            }
+        } else if (sysex_state != State_Invalid) {
+            // check for buffer overflow
+            if (sysex_ptr + 3 < buffer_end) {
+                // NOTE: always going to be 0xF7 - so why bother?
+                *sysex_ptr++ = packet->Data1;
+                *sysex_ptr++ = packet->Data2;
+                *sysex_ptr++ = packet->Data3;
+                
+                // Process the message
+                sysex_handle((uint16_t)(sysex_ptr - sysex_buffer));
+            }
         }
-    } else if (sysex_state != State_Invalid) {
-        // check for buffer overflow
-        if (sysex_ptr + 3 < buffer_end) {
-            // NOTE: always going to be 0xF7 - so why bother?
-            *sysex_ptr++ = packet->Data1;
-            *sysex_ptr++ = packet->Data2;
-            *sysex_ptr++ = packet->Data3;
-            
-            // Process the message
-            sysex_handle((uint8_t)(sysex_ptr - sysex_buffer));
+    } else {
+        if (packet->Data1 == 0xf0 &&
+			packet->Data2 == 0x6e) {
+			fastrgb_clear();
         }
     }
     
@@ -191,27 +217,27 @@ void sysex_handle_3e (MIDI_EventPacket_t* packet)
 // Handle a 2-byte end message
 void sysex_handle_2e (MIDI_EventPacket_t* packet)
 {
-	if (sysex_is_reading)
-	{
     // 2-byte End of sysex
-    sysex_is_reading = false;
-    
-    if (sysex_state != State_Invalid) {
-        // check for buffer overflow
-        if (sysex_ptr + 2 < buffer_end) {
-            // NOTE: always going to be 0xF7 - so why bother?
-            *sysex_ptr++ = packet->Data1;
-            *sysex_ptr++ = packet->Data2;
-            
-            // Process the message
-            sysex_handle((uint8_t)(sysex_ptr - sysex_buffer));
+	if (sysex_is_reading) {
+        sysex_is_reading = false;
+        
+        if (sysex_state != State_Invalid) {
+            // check for buffer overflow
+            if (sysex_ptr + 2 < buffer_end) {
+                // NOTE: always going to be 0xF7 - so why bother?
+                *sysex_ptr++ = packet->Data1;
+                *sysex_ptr++ = packet->Data2;
+                
+                // Process the message
+                sysex_handle((uint16_t)(sysex_ptr - sysex_buffer));
+            }
         }
+	} else {
+
     }
-    
+        
     // Reset state for next message
     sysex_state = State_Begin;
-	}
-	else{}	
 }
 
 // Handle a 1-byte end message
@@ -229,13 +255,13 @@ void sysex_handle_1e (MIDI_EventPacket_t* packet)
                 *sysex_ptr++ = packet->Data1;
                 
                 // Process the message
-                sysex_handle((uint8_t)(sysex_ptr - sysex_buffer));
+                sysex_handle((uint16_t)(sysex_ptr - sysex_buffer));
             }
         }
-        
-        // Reset state for next message
-        sysex_state = State_Begin;
     } else {
         // single byte System Common Message
     }
+        
+    // Reset state for next message
+    sysex_state = State_Begin;
 }
