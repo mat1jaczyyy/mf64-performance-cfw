@@ -108,49 +108,16 @@
     <ExternalMakeFilePath>$(MSBuildProjectDirectory)\makefile</ExternalMakeFilePath>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="config.c">
+    <Compile Include="app.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="config.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="constants.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="display.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="display.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="eeprom.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="eeprom.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="fastrgb.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="fastrgb.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="idle.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="idle.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="jumptoboot.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="jumptoboot.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="key.c">
+    <Compile Include="app.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="key.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="key.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="led.c">
@@ -159,31 +126,7 @@
     <Compile Include="led.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="midi.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="midi.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="midifighter64.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="random.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="random.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="sysex.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="sysex.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="usb_descriptors.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="usb_descriptors.h">
+    <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

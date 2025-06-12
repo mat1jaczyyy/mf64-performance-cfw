@@ -130,29 +130,16 @@ LUFA_OPTS += -D USE_STATIC_OPTIONS="(USB_DEVICE_OPT_FULLSPEED | USB_OPT_REG_ENAB
 # Create the LUFA source path variables by including the LUFA root makefile
 include $(LUFA_PATH)/LUFA/makefile
 
-
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c                                                 \
-	  eeprom.c				  \
-	  led.c					  \
-	  key.c					  \
-	  midi.c				  \
-	  random.c				  \
-	  display.c	              \
-	  usb_descriptors.c	 	  \
-	  jumptoboot.c            \
-	  sysex.c                 \
-	  config.c	              \
-	  fastrgb.c	              \
-	  idle.c				  \
-	  $(LUFA_SRC_USB)		  \
+SRC = app.c                   \
+	  key.c                   \
+	  led.c                   \
+	  main.c                  \
+	  $(LUFA_SRC_USB)         \
 	  $(LUFA_SRC_USBCLASS)
-
-
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC =
-
 
 # List Assembler source files here.
 #     Make them always end in a capital .S.  Files ending in a lowercase .s
