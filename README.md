@@ -10,13 +10,48 @@ To upload the custom firmware to your Midi Fighter 64, use the official [Midi Fi
 
 ## Building
 
-Prerequisites:
-- [Atmel Studio 7.0](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio#Downloads)
-- [WinAVR](https://sourceforge.net/projects/winavr/files/latest/download)
-    - **WARNING**: WinAVR will likely **COMPLETELY OVERWRITE YOUR SYSTEM PATH ENVIRONMENT VARIABLE**. Please ensure you have a backup of it before installing!
-        - If you end up losing your PATH variable, **do not reboot your machine** and follow the steps outlined [here](https://superuser.com/a/1127136).
-    - Patch WinAVR with a modified [msys-1.0.dll](https://www.madwizard.org/download/electronics/msys-1.0-vista64.zip) in `utils/bin`.
+### Prerequisites:
 
-Build `Midi Fighter 64.atsln` with Atmel Studio, and the output file will be located at `midi_fighter_64/midifighter64.hex`.
+You will need to install the **avr-toolchain** and **make** to build the custom firmware yourself.
 
-To upload the final output file to a Midi Fighter 64, use the Midi Fighter Utility's Load Custom Firmware feature as explained in the Installation section.
+#### Windows
+
+On windows, you have to open the command prompt and enter:
+
+```bash
+winget install avr-gcc
+```
+
+To install **make** on your windows system, you can either install [Git Bash](https://winget.run/pkg/Git/Git) or use [Chocolately](https://community.chocolatey.org/packages/make).
+
+#### macOS
+
+On macOS, you will need to install [brew](https://brew.sh/) first. After that, you can install all everything you need by entering this in your terminal:
+
+```shell
+brew tap osx-cross/avr
+brew install avr-gcc make
+```
+
+`make` will be preinstalled by installing brew and the Xcode Command-Line Tools.
+
+#### Linux (Ubuntu)
+
+On Ubuntu Linux you will need to enter this into your terminal to install the avr-toolchain and make
+
+```shell
+sudo apt-get update
+sudo apt-get install gcc-avr binutils-avr avr-libc
+```
+
+If you are using any other distro, I recommend you try to find the packages using your prefered package manager.
+
+### Building the Firmware
+
+Building the Firmware is easy. If you installed the avr-toolchain and make on your system, you can enter the root directory of this repository with your Terminal and enter:
+
+```shell
+make
+```
+
+This should result in a "midifighter64.hex" file in a new `/build` directory, which you can then flash.

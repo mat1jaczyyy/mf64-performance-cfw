@@ -108,16 +108,24 @@ FORMAT = ihex
 # Target file name (without extension).
 TARGET = midifighter64
 
+# Build output files in build directory
+BUILD_TARGET_ELF = $(OBJDIR)/$(TARGET).elf
+BUILD_TARGET_HEX = $(OBJDIR)/$(TARGET).hex
+BUILD_TARGET_EEP = $(OBJDIR)/$(TARGET).eep
+BUILD_TARGET_LSS = $(OBJDIR)/$(TARGET).lss
+BUILD_TARGET_SYM = $(OBJDIR)/$(TARGET).sym
+BUILD_TARGET_MAP = $(OBJDIR)/$(TARGET).map
+
 
 # Object files directory
 #     To put object files in current directory, use a dot (.), do NOT make
 #     this an empty or blank macro!
-OBJDIR = .
+OBJDIR = build
 
 
 # Path to the LUFA library
 #LUFA_PATH = ../LUFA-120219
-LUFA_PATH = ../LUFA-151115
+LUFA_PATH = LUFA-151115
 
 # LUFA library compile-time options and predefined tokens
 LUFA_OPTS  = -D USB_DEVICE_ONLY
@@ -130,16 +138,29 @@ LUFA_OPTS += -D USE_STATIC_OPTIONS="(USB_DEVICE_OPT_FULLSPEED | USB_OPT_REG_ENAB
 # Create the LUFA source path variables by including the LUFA root makefile
 include $(LUFA_PATH)/LUFA/makefile
 
+
 # List C source files here. (C dependencies are automatically generated.)
-SRC = app.c                   \
-	  key.c                   \
-	  led.c                   \
-	  main.c                  \
-	  $(LUFA_SRC_USB)         \
+SRC = src/$(TARGET).c                                             \
+	  src/eeprom.c				  \
+	  src/led.c					  \
+	  src/key.c					  \
+	  src/midi.c				  \
+	  src/random.c				  \
+	  src/display.c	              \
+	  src/usb_descriptors.c	 	  \
+	  src/jumptoboot.c            \
+	  src/sysex.c                 \
+	  src/config.c	              \
+	  src/fastrgb.c	              \
+	  src/idle.c				  \
+	  $(LUFA_SRC_USB)		  \
 	  $(LUFA_SRC_USBCLASS)
+
+
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC =
+
 
 # List Assembler source files here.
 #     Make them always end in a capital .S.  Files ending in a lowercase .s
@@ -168,7 +189,7 @@ DEBUG = dwarf-2
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS = $(LUFA_PATH)/
+EXTRAINCDIRS = $(LUFA_PATH)/ include/
 
 
 # Compiler flag to set the C Standard level.
@@ -322,7 +343,7 @@ EXTMEMOPTS =
 #  -Wl,...:     tell GCC to pass this to linker.
 #    -Map:      create map file
 #    --cref:    add cross reference to  map file
-LDFLAGS  = -Wl,-Map=$(TARGET).map,--cref
+LDFLAGS  = -Wl,-Map=$(BUILD_TARGET_MAP),--cref
 LDFLAGS += -Wl,--relax
 LDFLAGS += -Wl,--gc-sections
 LDFLAGS += $(EXTMEMOPTS)
@@ -467,11 +488,11 @@ build: elf hex eep lss sym
 #build: lib
 
 
-elf: $(TARGET).elf
-hex: $(TARGET).hex
-eep: $(TARGET).eep
-lss: $(TARGET).lss
-sym: $(TARGET).sym
+elf: $(BUILD_TARGET_ELF)
+hex: $(BUILD_TARGET_HEX)
+eep: $(BUILD_TARGET_EEP)
+lss: $(BUILD_TARGET_LSS)
+sym: $(BUILD_TARGET_SYM)
 LIBNAME=lib$(TARGET).a
 lib: $(LIBNAME)
 
@@ -490,18 +511,18 @@ end:
 
 
 # Display size of file.
-HEXSIZE = $(SIZE) --target=$(FORMAT) $(TARGET).hex
-ELFSIZE = $(SIZE) $(MCU_FLAG) $(FORMAT_FLAG) $(TARGET).elf
+HEXSIZE = $(SIZE) --target=$(FORMAT) $(BUILD_TARGET_HEX)
+ELFSIZE = $(SIZE) $(MCU_FLAG) $(FORMAT_FLAG) $(BUILD_TARGET_ELF)
 MCU_FLAG = $(shell $(SIZE) --help | grep -- --mcu > /dev/null && echo --mcu=$(MCU) )
 FORMAT_FLAG = $(shell $(SIZE) --help | grep -- --format=.*avr > /dev/null && echo --format=avr )
 
 
 sizebefore:
-	@if test -f $(TARGET).elf; then echo; echo $(MSG_SIZE_BEFORE); $(ELFSIZE); \
+	@if test -f $(BUILD_TARGET_ELF); then echo; echo $(MSG_SIZE_BEFORE); $(ELFSIZE); \
 	2>/dev/null; echo; fi
 
 sizeafter:
-	@if test -f $(TARGET).elf; then echo; echo $(MSG_SIZE_AFTER); $(ELFSIZE); \
+	@if test -f $(BUILD_TARGET_ELF); then echo; echo $(MSG_SIZE_AFTER); $(ELFSIZE); \
 	2>/dev/null; echo; fi
 
 
@@ -512,28 +533,28 @@ gccversion :
 
 
 # Program the device.
-program: $(TARGET).hex $(TARGET).eep
+program: $(BUILD_TARGET_HEX) $(BUILD_TARGET_EEP)
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
 
-flip: $(TARGET).hex
+flip: $(BUILD_TARGET_HEX)
 	batchisp -hardware usb -device $(MCU) -operation erase f
-	batchisp -hardware usb -device $(MCU) -operation loadbuffer $(TARGET).hex program
+	batchisp -hardware usb -device $(MCU) -operation loadbuffer $(BUILD_TARGET_HEX) program
 	batchisp -hardware usb -device $(MCU) -operation start reset 0
 
-dfu: $(TARGET).hex
+dfu: $(BUILD_TARGET_HEX)
 	dfu-programmer $(MCU) erase
-	dfu-programmer $(MCU) flash $(TARGET).hex
+	dfu-programmer $(MCU) flash $(BUILD_TARGET_HEX)
 	dfu-programmer $(MCU) reset
 
-flip-ee: $(TARGET).hex $(TARGET).eep
-	$(COPY) $(TARGET).eep $(TARGET)eep.hex
+flip-ee: $(BUILD_TARGET_HEX) $(BUILD_TARGET_EEP)
+	$(COPY) $(BUILD_TARGET_EEP) $(OBJDIR)/$(TARGET)eep.hex
 	batchisp -hardware usb -device $(MCU) -operation memory EEPROM erase
-	batchisp -hardware usb -device $(MCU) -operation memory EEPROM loadbuffer $(TARGET)eep.hex program
+	batchisp -hardware usb -device $(MCU) -operation memory EEPROM loadbuffer $(OBJDIR)/$(TARGET)eep.hex program
 	batchisp -hardware usb -device $(MCU) -operation start reset 0
-	$(REMOVE) $(TARGET)eep.hex
+	$(REMOVE) $(OBJDIR)/$(TARGET)eep.hex
 
-dfu-ee: $(TARGET).hex $(TARGET).eep
-	dfu-programmer $(MCU) eeprom-flash $(TARGET).eep
+dfu-ee: $(BUILD_TARGET_HEX) $(BUILD_TARGET_EEP)
+	dfu-programmer $(MCU) eeprom-flash $(BUILD_TARGET_EEP)
 	dfu-programmer $(MCU) reset
 
 
@@ -545,18 +566,18 @@ gdb-config:
 	@echo define reset >> $(GDBINIT_FILE)
 	@echo SIGNAL SIGHUP >> $(GDBINIT_FILE)
 	@echo end >> $(GDBINIT_FILE)
-	@echo file $(TARGET).elf >> $(GDBINIT_FILE)
+	@echo file $(BUILD_TARGET_ELF) >> $(GDBINIT_FILE)
 	@echo target remote $(DEBUG_HOST):$(DEBUG_PORT)  >> $(GDBINIT_FILE)
 ifeq ($(DEBUG_BACKEND),simulavr)
 	@echo load  >> $(GDBINIT_FILE)
 endif
 	@echo break main >> $(GDBINIT_FILE)
 
-debug: gdb-config $(TARGET).elf
+debug: gdb-config $(BUILD_TARGET_ELF)
 ifeq ($(DEBUG_BACKEND), avarice)
 	@echo Starting AVaRICE - Press enter when "waiting to connect" message displays.
 	@$(WINSHELL) /c start avarice --jtag $(JTAG_DEV) --erase --program --file \
-	$(TARGET).elf $(DEBUG_HOST):$(DEBUG_PORT)
+	$(BUILD_TARGET_ELF) $(DEBUG_HOST):$(DEBUG_PORT)
 	@$(WINSHELL) /c pause
 
 else
@@ -577,39 +598,39 @@ COFFCONVERT += --change-section-address .eeprom-0x810000
 
 
 
-coff: $(TARGET).elf
+coff: $(BUILD_TARGET_ELF)
 	@echo
-	@echo $(MSG_COFF) $(TARGET).cof
-	$(COFFCONVERT) -O coff-avr $< $(TARGET).cof
+	@echo $(MSG_COFF) $(OBJDIR)/$(TARGET).cof
+	$(COFFCONVERT) -O coff-avr $< $(OBJDIR)/$(TARGET).cof
 
 
-extcoff: $(TARGET).elf
+extcoff: $(BUILD_TARGET_ELF)
 	@echo
-	@echo $(MSG_EXTENDED_COFF) $(TARGET).cof
-	$(COFFCONVERT) -O coff-ext-avr $< $(TARGET).cof
+	@echo $(MSG_EXTENDED_COFF) $(OBJDIR)/$(TARGET).cof
+	$(COFFCONVERT) -O coff-ext-avr $< $(OBJDIR)/$(TARGET).cof
 
 
 
 # Create final output files (.hex, .eep) from ELF output file.
-%.hex: %.elf
+$(BUILD_TARGET_HEX): $(BUILD_TARGET_ELF)
 	@echo
 	@echo $(MSG_FLASH) $@
 	$(OBJCOPY) -O $(FORMAT) -R .eeprom -R .fuse -R .lock $< $@
 
-%.eep: %.elf
+$(BUILD_TARGET_EEP): $(BUILD_TARGET_ELF)
 	@echo
 	@echo $(MSG_EEPROM) $@
 	-$(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
 	--change-section-lma .eeprom=0 --no-change-warnings -O $(FORMAT) $< $@ || exit 0
 
 # Create extended listing file from ELF output file.
-%.lss: %.elf
+$(BUILD_TARGET_LSS): $(BUILD_TARGET_ELF)
 	@echo
 	@echo $(MSG_EXTENDED_LISTING) $@
 	$(OBJDUMP) -h -S -z $< > $@
 
 # Create a symbol table from ELF output file.
-%.sym: %.elf
+$(BUILD_TARGET_SYM): $(BUILD_TARGET_ELF)
 	@echo
 	@echo $(MSG_SYMBOL_TABLE) $@
 	$(NM) -n $< > $@
@@ -626,11 +647,12 @@ extcoff: $(TARGET).elf
 
 
 # Link: create ELF output file from object files.
-.SECONDARY : $(TARGET).elf
+.SECONDARY : $(BUILD_TARGET_ELF)
 .PRECIOUS : $(OBJ)
-%.elf: $(OBJ)
+$(BUILD_TARGET_ELF): $(OBJ)
 	@echo
 	@echo $(MSG_LINKING) $@
+	@mkdir -p $(dir $@)
 	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
 
 
@@ -638,6 +660,7 @@ extcoff: $(TARGET).elf
 $(OBJDIR)/%.o : %.c
 	@echo
 	@echo $(MSG_COMPILING) $<
+	@mkdir -p $(dir $@)
 	$(CC) -c $(ALL_CFLAGS) $< -o $@
 
 
@@ -645,6 +668,7 @@ $(OBJDIR)/%.o : %.c
 $(OBJDIR)/%.o : %.cpp
 	@echo
 	@echo $(MSG_COMPILING_CPP) $<
+	@mkdir -p $(dir $@)
 	$(CC) -c $(ALL_CPPFLAGS) $< -o $@
 
 
@@ -662,6 +686,7 @@ $(OBJDIR)/%.o : %.cpp
 $(OBJDIR)/%.o : %.S
 	@echo
 	@echo $(MSG_ASSEMBLING) $<
+	@mkdir -p $(dir $@)
 	$(CC) -c $(ALL_ASFLAGS) $< -o $@
 
 
@@ -676,13 +701,13 @@ clean: begin clean_list end
 clean_list :
 	@echo
 	@echo $(MSG_CLEANING)
-	$(REMOVE) $(TARGET).hex
-	$(REMOVE) $(TARGET).eep
+	$(REMOVE) $(BUILD_TARGET_HEX)
+	$(REMOVE) $(BUILD_TARGET_EEP)
 	$(REMOVE) $(TARGET).cof
-	$(REMOVE) $(TARGET).elf
-	$(REMOVE) $(TARGET).map
-	$(REMOVE) $(TARGET).sym
-	$(REMOVE) $(TARGET).lss
+	$(REMOVE) $(BUILD_TARGET_ELF)
+	$(REMOVE) $(BUILD_TARGET_MAP)
+	$(REMOVE) $(BUILD_TARGET_SYM)
+	$(REMOVE) $(BUILD_TARGET_LSS)
 	$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.o) $(CPPSRC:%.cpp=$(OBJDIR)/%.o) $(ASRC:%.S=$(OBJDIR)/%.o)
 	$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.lst) $(CPPSRC:%.cpp=$(OBJDIR)/%.lst) $(ASRC:%.S=$(OBJDIR)/%.lst)
 	$(REMOVE) $(SRC:.c=.s)

@@ -41,3 +41,6 @@
 *.lst
 *.map
 *.sym
+
+/build
+/.dep
