@@ -26,13 +26,12 @@
 #include <math.h>
 
 #include "key.h"
-#include "midi.h"
+#include "utils/midi.h"
 #include "fastrgb.h"
 #include "random.h"
-#include "display.h"
-#include "idle.h"
+#include "led/display.h"
 //#include "accel_gyro.h"
-#include "led.h"
+#include "led/led_driver.h"
 #include "eeprom.h"
 #include "config.h" // for calling Midifighter_GetIncomingUsbMidiMessages()
 
@@ -167,19 +166,18 @@ void fastrgb_state(uint8_t* buffer) {
 	// Jede LED benötigt 3 Bytes (RGB), aber die Ansteuerung in led.c
 	// behandelt jede zweite LED als neuen Button
 	for (uint8_t i=0; i<NUM_BUTTONS; i++) {
-		// LED 0 (erste LED des Buttons)
+		// LED 0
 		buffer[i * 6 + 0] = g_fastrgb_state[i][0][2]; // B
 		buffer[i * 6 + 1] = g_fastrgb_state[i][0][0]; // R  
 		buffer[i * 6 + 2] = g_fastrgb_state[i][0][1]; // G
 		
-		// LED 1 (zweite LED des Buttons)  
+		// LED 1
 		buffer[i * 6 + 3] = g_fastrgb_state[i][1][2]; // B
 		buffer[i * 6 + 4] = g_fastrgb_state[i][1][0]; // R
 		buffer[i * 6 + 5] = g_fastrgb_state[i][1][1]; // G
 	}
 }
 
-// Kompatibilitätsfunktion für bestehenden Code (nur erste LED pro Button)
 void fastrgb_state_single_led(uint8_t* buffer) {
 	for (uint8_t i=0; i<NUM_BUTTONS; i++) {
 		buffer[i * 3 + 0] = g_fastrgb_state[i][0][2]; // B
@@ -207,41 +205,11 @@ void default_display_run(void)
 			one_second_counter = 0;
 		}
 	}
-		
-	// After a certain period of inactivity display rainbow pattern until
-	// next key press.
-	// If the Sleep Time is set to 0 never activate the sleep mode
-	//if(G_EE_SLEEP_TIME)
-	//{
-	//	if (sleep_minute_counter == G_EE_SLEEP_TIME)
-	//	{
-	//		ball_demo_setup();
-	//		sleep_minute_counter +=1;
-	//	}
-	//	if (sleep_minute_counter > G_EE_SLEEP_TIME)
-	//	{
-	//		ball_demo_run(g_display_buffer);
-	//	}
-	//	if (g_key_down)
-	//	{
-	//		one_second_counter = 0;
-	//		sleep_minute_counter=0;
-	//	}
-	//}
 
 	if (G_EE_SLEEP_TIME) {
-		if (sleep_minute_counter == G_EE_SLEEP_TIME) {
-			idle_init();
-			sleep_minute_counter++;
-		}
-		if (sleep_minute_counter > G_EE_SLEEP_TIME) {
-			idle_tick(g_display_buffer);
-		}
-		if (g_key_down) {
-			one_second_counter = 0;
-			sleep_minute_counter = 0;
-		}
+		// TODO: idle animation
 	}
+
 	geometric_animation_state(g_display_buffer);
 }
 

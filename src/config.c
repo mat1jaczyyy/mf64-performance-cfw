@@ -3,7 +3,11 @@
  * DJTT - MIDI Fighter 64 - Embedded Software License
  * Copyright (c) 2016: DJ Tech Tools
  * Permission is hereby granted, free of charge, to any person owning or possessing 
- * a DJ Tech-Tools MIDI Fighter 64 Hardware Device to view and modify this source 
+ * a DJ Tech-Tool            led_driver_set_state(0xffff,0x00ffffff);
+            _delay_ms(250);
+            led_driver_set_state(0x0000,0x00ffffff);
+            _delay_ms(250);
+            led_driver_set_state(0xffff,0x00ffffff);I Fighter 64 Hardware Device to view and modify this source 
  * code for personal use. Person may not publish, distribute, sublicense, or sell 
  * the source code (modified or un-modified). Person may not use this source code 
  * or any diminutive works for commercial purposes. The permission to use this source 
@@ -25,10 +29,10 @@
 #include "eeprom.h"
 
 // For the settings
-#include "led.h"
-#include "display.h" // !review: MF3D Patching only
+#include "led/led_driver.h"
+#include "led/display.h" // !review: MF3D Patching only
 #include "key.h"
-#include "midi.h"
+#include "utils/midi.h"
 #include "eeprom.h"
 
 
@@ -193,8 +197,8 @@ void sysExCmdSystem (uint16_t length, uint8_t* buffer)
         {
 			wdt_disable();
             // Bootloader mode
-            //led_set_state(0xA5A5,0x00ffffff);
-			led_set_state_dfu();
+            //led_driver_set_state(0xA5A5,0x00ffffff);
+			led_driver_set_state_dfu();
             Jump_To_Bootloader();
         }
         break;
@@ -205,11 +209,11 @@ void sysExCmdSystem (uint16_t length, uint8_t* buffer)
             eeprom_factory_reset();
 
             // Flash to signal success.
-            led_set_state(0xffff,0x00ffffff);
+            led_driver_set_state(0xffff,0x00ffffff);
             _delay_ms(100);
-            led_set_state(0x0000,0x00ffffff);
+            led_driver_set_state(0x0000,0x00ffffff);
             _delay_ms(100);
-            led_set_state(0xffff,0x00ffffff);
+            led_driver_set_state(0xffff,0x00ffffff);
             _delay_ms(100);
 			
 			// No Reset Method: Send out updated configuration data in case MF Utility is listening

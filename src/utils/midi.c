@@ -28,9 +28,9 @@
 #include "key.h"
 
 #include "usb_descriptors.h"
-#include "display.h"
-#include "midi.h"
-#include "led.h"
+#include "led/display.h"
+#include "utils/midi.h"
+#include "led/led_driver.h"
 #include "eeprom.h"
 
 
@@ -79,27 +79,6 @@ static USB_ClassInfo_MIDI_Device_t s_midi_interface = {
 
 USB_ClassInfo_MIDI_Device_t* g_midi_interface_info;
 
-// This table maps key numbers to midi note offsets, to match
-// up the notes with Ableton Live drum racks, e.g. key 5 will initially
-// send NoteOn G#3 = 44, with the rest of the keypad sending:
-//
-//     C4  C#4 D4  D#4
-//     G#3 A3  A#3 B3
-//     E3  F3  F#3 G3
-//     C3  C#3 D3  D#3
-//
-// The table is coded as note offsets so we can re-base the pad at another
-// MIDI note, with the default offset being C3 = 36. The "PROGMEM" setting
-// forces the table into program memory so it won't take up precious RAM.
-//
-const uint8_t kNoteMap[16] PROGMEM = {
-    12, 13, 14, 15,
-     8,  9, 10, 11,
-     4,  5,  6,  7,
-     0,  1,  2,  3,
-};
-
-
 // NOTE(rgreen): These assignments here are debug MIDI values, you should
 // never see these, the actual values will be read and set from the EEPROM
 // table during startup.
@@ -126,138 +105,13 @@ void midi_setup(void)
     memset(g_midi_note_off_counter, 0, sizeof(g_midi_note_off_counter)); // review: why do we have two*MIDI_MAX_NOTES, but only save one. Is one unused?
 }
 
-void midi_stream_raw_note(const uint8_t channel,
-                          const uint8_t pitch,
-                          const bool onoff,
-                          const uint8_t velocity)
-{
-    uint8_t command = ((onoff)? 0x90 : 0x80);
-	uint8_t midi_channel = G_EE_MIDI_CHANNEL;
-
-	
-    MIDI_EventPacket_t midi_event;
-	
-	#if USE_LUFA_2015 > 0
-      midi_event.Event = command >> 4;  // USB-MIDI virtual cable (0..15)
-	#else
-      midi_event.CableNumber = 0x0;  // USB-MIDI virtual cable (0..15)
-      midi_event.Command     = command >> 4;   // 0..15	
-	#endif
-    midi_event.Data1       = command | (midi_channel & 0x0f);  // 0..15
-    midi_event.Data2       = pitch & 0x7f;   // 0..127
-    midi_event.Data3       = velocity & 0x7f; // 0..127
-    MIDI_Device_SendEventPacket(g_midi_interface_info, &midi_event);
-}
-
-
-// Used to send a note on a specific channel
-void midi_stream_note_ch(const uint8_t channel,
-						 const uint8_t pitch,           
-                         const bool onoff)
-
-{
-  // Check if the message should be a NoteOn or NoteOff event.
-    uint8_t command = ((onoff)? 0x90 : 0x80);
-
-    // Assemble a USB-MIDI event packet, remembering to mask off the values
-    // to the correct bit fields.
-    MIDI_EventPacket_t midi_event;
-	#if USE_LUFA_2015 > 0
-	  midi_event.Event = command >> 4;  // USB-MIDI virtual cable (0..15)
-	#else
-	  midi_event.CableNumber = 0x0;  // USB-MIDI virtual cable (0..15)
-	  midi_event.Command     = command >> 4;   // 0..15
-	#endif
-    midi_event.Data1       = command | (channel & 0x0f);  // 0..15
-    midi_event.Data2       = pitch & 0x7f;   // 0..127
-    midi_event.Data3       = G_EE_MIDI_VELOCITY & 0x7f; // 0..127
-
-    MIDI_Device_SendEventPacket(g_midi_interface_info, &midi_event);
-}
-
-void midi_stream_raw_cc(const uint8_t channel,
-                        const uint8_t cc,
-                        const uint8_t value)
-{
-    const uint8_t command = 0xb0;  // the Channel Change command.
-    MIDI_EventPacket_t midi_event;
-	#if USE_LUFA_2015 > 0
-	  midi_event.Event = command >> 4;  // USB-MIDI virtual cable (0..15)
-	#else
-	  midi_event.CableNumber = 0x0;  // USB-MIDI virtual cable (0..15)
-	  midi_event.Command     = command >> 4;   // 0..15
-	#endif
-    midi_event.Data1       = command | (channel & 0x0f); // 0..15
-    midi_event.Data2       = cc & 0x7f;   // 0..127
-    midi_event.Data3       = value & 0x7f;  // 0..127
-    MIDI_Device_SendEventPacket(g_midi_interface_info, &midi_event);
-}
-
-
-// Append a MIDI note change event (note on or off) to the currently
-// selected USB endpoint. If the endpoint is full it will be flushed.
-//
-//  pitch    Pitch of the note to turn on or off.
-//  onoff    True for a NoteOn, false for a NoteOff.
-//
-// NOTE: The endpoint can contain 64 bytes and each MIDI-USB message is 4
-// bytes giving us just enough space to fit in, for example, 16 keydown
-// messages.
-//
-void midi_stream_note(const uint8_t pitch, const bool onoff)
-{
-    // Check if the message should be a NoteOn or NoteOff event.
-    uint8_t command = ((onoff)? 0x90 : 0x80);
-	uint8_t midi_channel = G_EE_MIDI_CHANNEL;
-
-    // Assemble a USB-MIDI event packet, remembering to mask off the values
-    // to the correct bit fields.
-    MIDI_EventPacket_t midi_event;
-	#if USE_LUFA_2015 > 0
-	  midi_event.Event = command >> 4;  // USB-MIDI virtual cable (0..15)
-	#else
-	  midi_event.CableNumber = 0x0;  // USB-MIDI virtual cable (0..15)
-	  midi_event.Command     = command >> 4;   // 0..15
-	#endif
-    midi_event.Data1       = command | (midi_channel & 0x0f);  // 0..15
-    midi_event.Data2       = pitch & 0x7f;   // 0..127
-    midi_event.Data3       = G_EE_MIDI_VELOCITY & 0x7f; // 0..127
-
-    MIDI_Device_SendEventPacket(g_midi_interface_info, &midi_event);
-}
-
-// Append a Control Change Event to the currently selected USB Endpoint. If
-// the endpoint is full it will be flushed.
-//
-//  controller   Number of the controller to alter.
-//  value        Value to send to the CC.
-//
-void midi_stream_cc(const uint8_t controller, const uint8_t value)
-{
-    //  Assign this MIDI event to cable 0.
-    const uint8_t command = 0xb0;  // the Channel Change command.
-	uint8_t midi_channel = G_EE_MIDI_CHANNEL;
-    MIDI_EventPacket_t midi_event;
-	#if USE_LUFA_2015 > 0
-	  midi_event.Event = command >> 4;  // USB-MIDI virtual cable (0..15)
-	#else
-	  midi_event.CableNumber = 0x0;  // USB-MIDI virtual cable (0..15)
-	  midi_event.Command     = command >> 4;   // 0..15
-	#endif
-    midi_event.Data1       = command | (midi_channel & 0x0f); // 0..15
-    midi_event.Data2       = controller & 0x7f;   // 0..127
-    midi_event.Data3       = value & 0x7f;  // 0..127
-
-    MIDI_Device_SendEventPacket(g_midi_interface_info, &midi_event);
-}
-
 // Append a SysEx Event to the currently selected USB Endpoint. If
 // the endpoint is full it will be flushed.
 //
 //  length       Number of bytes in the message.
 //  data         SysEx message data buffer.
 //
-void midi_stream_sysex (const uint8_t length, uint8_t* data)
+void midi_stream_sysex(const uint8_t length, uint8_t* data)
 {
     //  Assign this MIDI event to cable 0.
     MIDI_EventPacket_t midi_event;
@@ -335,13 +189,6 @@ void midi_stream_sysex (const uint8_t length, uint8_t* data)
     }
 }
 
-
-uint8_t midi_64_key_to_note(const uint8_t keynum) 
-{
-	uint8_t note = MIDI_BASENOTE + keynum;
-	return note;
-}
-
 void midi_clock(void)
 {
 	// If not enabled enable MIDI Clock
@@ -370,3 +217,14 @@ void midi_clock_enable(bool state)
 	}
 }
 // ----------------------------------------------------------------------------
+
+void send_midi(uint8_t t, uint8_t p, uint8_t v) {
+	MIDI_EventPacket_t midi_event;
+
+	midi_event.Event = t >> 4;
+    midi_event.Data1       = t;
+    midi_event.Data2       = p & 0x7f;   // 0..127
+    midi_event.Data3       = v & 0x7f; // 0..127
+
+    MIDI_Device_SendEventPacket(g_midi_interface_info, &midi_event);
+}

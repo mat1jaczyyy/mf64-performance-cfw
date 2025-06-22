@@ -31,7 +31,7 @@
 
 // SysEx constants -----------------------------------------------
 
-#include "midi.h"
+#include "utils/midi.h"
 #define SYSEX_MAX_PAYLOAD (MIDI_MAX_SYSEX - 5)
 
 // SysEx types     -----------------------------------------------

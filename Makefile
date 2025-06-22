@@ -140,23 +140,24 @@ include $(LUFA_PATH)/LUFA/makefile
 
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = src/$(TARGET).c                                             \
-	  src/eeprom.c				  \
-	  src/led.c					  \
-	  src/key.c					  \
-	  src/midi.c				  \
-	  src/random.c				  \
-	  src/display.c	              \
-	  src/usb_descriptors.c	 	  \
-	  src/jumptoboot.c            \
-	  src/sysex.c                 \
-	  src/config.c	              \
-	  src/fastrgb.c	              \
-	  src/idle.c				  \
-	  $(LUFA_SRC_USB)		  \
-	  $(LUFA_SRC_USBCLASS)
-
-
+SRC = src/app.c	\
+	src/modes/mode.c \
+	src/modes/system/boot.c \
+	src/modes/user/performance.c \
+	src/eeprom.c \
+	src/led/led_driver.c \
+	src/led/display.c \
+	src/key.c \
+	src/utils/midi.c \
+	src/utils/palette.c \
+	src/random.c \
+	src/usb_descriptors.c \
+	src/utils/jumptoboot.c \
+	src/sysex.c \
+	src/config.c \
+	src/fastrgb.c \
+	$(LUFA_SRC_USB) \
+	$(LUFA_SRC_USBCLASS)
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC =

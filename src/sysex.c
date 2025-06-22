@@ -23,13 +23,14 @@
 #include "sysex.h"
 #include "constants.h"
 
-#include "midi.h"
+#include "utils/midi.h"
 
-#include "led.h"
+#include "led/led_driver.h"
 #include "fastrgb.h"
 #include <util/delay.h>
 
 uint8_t sysex_buffer[MIDI_MAX_SYSEX];
+
 enum {
     State_Begin = 0,    // Beginning of new message, state not yet known
     State_CheckMID,     // Need to verify 3rd byte of manufacturer ID
@@ -45,7 +46,7 @@ enum {
 #define MAX_COMMAND 8
 SysExFn sysExCommandMap[MAX_COMMAND] = {0,};
 
-void sysex_handle (uint16_t length)
+void sysex_handle(uint16_t length)
 {   
 	if (sysex_state == State_5F) {
 		fastrgb_decompress(sysex_buffer, sysex_buffer + length - 1);

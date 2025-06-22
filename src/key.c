@@ -26,8 +26,9 @@
 #include "key.h"
 #include "constants.h"
 
-#include "led.h"
-#include "midi.h" // for g_midi_note_off_counter
+#include "led/led_driver.h"
+#include "utils/midi.h" // for g_midi_note_off_counter
+#include "modes/mode.h" // for mode timer events
 
 // Globals ---------------------------------------------------------------------
 
@@ -144,6 +145,12 @@ ISR(TIMER0_OVF_vect)
     buffer_pos = (buffer_pos + 1) % DEBOUNCE_BUFFER_SIZE;
 	
 	system_time_ms += 1;
+	
+	// Call mode timer event every 1ms for EXACT timing
+	// WARNING: This runs in interrupt context - keep it fast!
+	// Only basic operations should be performed here
+	(*mode_timer_event[mode])();
+	
   	return;
 }
 

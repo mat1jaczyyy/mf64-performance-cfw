@@ -25,8 +25,8 @@
 #include <util/delay.h>
 
 #include "key.h"
-#include "midi.h"
-#include "display.h"
+#include "utils/midi.h"
+#include "led/display.h"
 #include "eeprom.h"
 #include "constants.h"
 

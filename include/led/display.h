@@ -42,7 +42,6 @@
 // --- Animation Lengths by Type
 #define GEOMETRIC_ANIMATION_STEPS 15
 
-
 enum DefaultColorIds {
 	COLORID_OFF = 0,
 	COLORID_RED = 1,
@@ -70,7 +69,6 @@ extern const uint8_t default_color[20][3];
 
 // Globals --------------------------------------------------------------------
 
-// Storage for the LED state - erweitert für zwei LEDs pro Button
 extern uint8_t g_display_buffer[64 * 2 * 3];
 extern const uint8_t default_color[20][3];
 extern const uint8_t ableton_midi_feedback_colors[128][3];
@@ -80,8 +78,8 @@ extern const uint8_t ableton_midi_feedback_colors[128][3];
 void default_display_run(void); 
 
 // - FastRGB State Functions
-void fastrgb_state(uint8_t* buffer);  // Erweiterte Funktion für beide LEDs
-void fastrgb_state_single_led(uint8_t* buffer);  // Kompatibilitätsfunktion
+void fastrgb_state(uint8_t* buffer);
+void fastrgb_state_single_led(uint8_t* buffer); 
 
 // - Animations
 void start_geometric_animation(void);

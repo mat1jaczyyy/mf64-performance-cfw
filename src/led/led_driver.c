@@ -21,14 +21,14 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	*/
 
-#include "led.h"
+#include "led/led_driver.h"
 //#include "constants.h" // imported in led.h
 #include "random.h"
 //#include "circular_buffer.h"
 #include "eeprom.h"
-#include "display.h"
+#include "led/display.h"
 #include "key.h"
-#include "midi.h"
+#include "utils/midi.h"
 
 // Global variables ------------------------------------------------------------
 
@@ -124,7 +124,7 @@ ISR(TIMER1_OVF_vect)
 
 // setup the LEDS for writing.
 //
-void led_setup(void)
+void led_driver_setup(void)
 {
     // Setup the output ports used by the LED system.
     // NOTE: LED_MISO remains an input port.
@@ -170,14 +170,14 @@ void led_setup(void)
     }
 }
 
-void led_disable(void)
+void led_driver_disable(void)
 {
     // Zero out the Timer1 Interrupt Enable bit so interrupts will
     // no longer be generated.
     TIMSK1 &= ~(_BV(TOIE1));
 }
 
-void led_enable(void)
+void led_driver_enable(void)
 {
 	// Set the Timer1 Interrupt Enable bit so interrupts are generated,
 	// driving the display refresh
@@ -189,12 +189,12 @@ void led_enable(void)
 // NOTE: added for compatibility with old Midifighter code.
 // Have added extra parameter color, this can be used to set the RGB value
 
-void led_set_state(uint16_t new_state, uint32_t color)
+void led_driver_set_state(uint16_t new_state, uint32_t color)
 {
 	return; // !review: temporarily disabled
 }
 
-void led_set_state_dfu(void)
+void led_driver_set_state_dfu(void)
 {
 	#if LED_CONFIGURATION == LED_CONFIGURATION_SINGLE_STRAND
 	// ===== PROTOTYPES ====
@@ -242,16 +242,16 @@ void led_set_state_dfu(void)
 	DDRC |= LED_ASYNC_GROUP1; // !review: overkill?
 	DDRB |= LED_ASYNC_GROUP0 | LED_ASYNC_GROUP2 | LED_ASYNC_GROUP3; // !review: overkill?
 	cli();
-	led_update_pixel_group0(indicator_states);
-	led_update_pixel_group1(indicator_states);
-	led_update_pixel_group2(indicator_states);
-	led_update_pixel_group3(indicator_states);
+	led_driver_update_pixel_group0(indicator_states);
+	led_driver_update_pixel_group1(indicator_states);
+	led_driver_update_pixel_group2(indicator_states);
+	led_driver_update_pixel_group3(indicator_states);
 	sei();	
 	#endif
 }
 
 #if LED_CONFIGURATION == LED_CONFIGURATION_SINGLE_STRAND
-void led_update_pixels(uint8_t *buffer)
+void led_driver_update_pixels(uint8_t *buffer)
 {
 	// MF 64 (LEDs with onboard PWM)
 	// - Each LED Requires 24-bits
@@ -317,7 +317,7 @@ void led_update_pixels(uint8_t *buffer)
 
 //volatile uint8_t *led_group_ports[4] = {&PORTB, &PORTC, &PORTB, &PORTB};
 //uint8_t led_group_masks[4] = {LED_ASYNC_GROUP0, LED_ASYNC_GROUP1, LED_ASYNC_GROUP2, LED_ASYNC_GROUP3};
-void led_update_pixel_group0(uint8_t *buffer)
+void led_driver_update_pixel_group0(uint8_t *buffer)
 {
 	static uint32_t test_buffer = 0x00000000;
 	uint32_t *single_led_buffer;
@@ -359,7 +359,7 @@ void led_update_pixel_group0(uint8_t *buffer)
 	return;
 }
 
-void led_update_pixel_group1(uint8_t *buffer) 
+void led_driver_update_pixel_group1(uint8_t *buffer) 
 {
 	//DDRC |= LED_ASYNC;
 	static uint32_t test_buffer = 0x00000000;
@@ -401,7 +401,7 @@ void led_update_pixel_group1(uint8_t *buffer)
 	return;
 }
 
-void led_update_pixel_group2(uint8_t *buffer)
+void led_driver_update_pixel_group2(uint8_t *buffer)
 {
 	static uint32_t test_buffer = 0x00000000;
 	uint32_t *single_led_buffer;
@@ -442,7 +442,7 @@ void led_update_pixel_group2(uint8_t *buffer)
 	return;
 }
 
-void led_update_pixel_group3(uint8_t *buffer)
+void led_driver_update_pixel_group3(uint8_t *buffer)
 {
 	static uint32_t test_buffer = 0x00000000;
 	uint32_t *single_led_buffer;
@@ -483,17 +483,17 @@ void led_update_pixel_group3(uint8_t *buffer)
 	return;
 }
 
-void led_update_pixels(uint8_t *buffer)
+void led_driver_update_pixels(uint8_t *buffer)
 {
 	DDRC |= LED_ASYNC_GROUP1; // !review: we don't need to set this every time
 	DDRB |= LED_ASYNC_GROUP0 | LED_ASYNC_GROUP2 | LED_ASYNC_GROUP3; // !review: we don't need to set this every time
 	cli(); // disable interrupts
 	// Buffer-Layout: 128 LEDs total, 32 LEDs pro Gruppe
 	// Jede LED braucht 3 Bytes (RGB) = 96 Bytes pro Gruppe
-	led_update_pixel_group0(buffer);      // LEDs 0-31:   Offset 0
-	led_update_pixel_group1(buffer+96);   // LEDs 32-63:  Offset 96
-	led_update_pixel_group2(buffer+192);  // LEDs 64-95:  Offset 192
-	led_update_pixel_group3(buffer+288);  // LEDs 96-127: Offset 288
+	led_driver_update_pixel_group0(buffer);      // LEDs 0-31:   Offset 0
+	led_driver_update_pixel_group1(buffer+96);   // LEDs 32-63:  Offset 96
+	led_driver_update_pixel_group2(buffer+192);  // LEDs 64-95:  Offset 192
+	led_driver_update_pixel_group3(buffer+288);  // LEDs 96-127: Offset 288
 	sei(); // reenable interrupts
 	return;
 }

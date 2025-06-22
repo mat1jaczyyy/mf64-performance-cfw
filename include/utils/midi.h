@@ -58,27 +58,12 @@ extern bool midi_clock_enabled;
 // MIDI function prototypes ----------------------------------------------------
 
 void midi_setup(void);
-void midi_stream_note_ch(const uint8_t channel, const uint8_t note, const bool onoff);
-void midi_stream_note(const uint8_t note, const bool onoff);
-void midi_stream_cc(const uint8_t cc, const uint8_t value);
 void midi_flush(void);
-uint8_t midi_64_key_to_note(const uint8_t keynum);
-
-
-
-void midi_stream_raw_note(const uint8_t channel,
-                          const uint8_t pitch,
-                          const bool onoff,
-                          const uint8_t velocity);
-
-void midi_stream_raw_cc(const uint8_t channel,
-                        const uint8_t cc,
-                        const uint8_t value);
-
-void midi_stream_sysex (const uint8_t length, uint8_t* data);
 
 void midi_clock(void);
-
 void midi_clock_enable(bool state);
+
+void midi_stream_sysex (const uint8_t length, uint8_t* data);
+void send_midi(uint8_t t, uint8_t p, uint8_t v);
 
 #endif // _MIDI_H_INCLUDED

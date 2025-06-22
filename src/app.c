@@ -39,18 +39,19 @@
 
 //#include "i2c.h"
 #include "key.h"
-#include "led.h"
-#include "midi.h"
+#include "led/led_driver.h"
+#include "utils/midi.h"
 #include "eeprom.h"
 #include "random.h"
-#include "display.h"
+#include "led/display.h"
 #include "constants.h"
 #include "fastrgb.h"
 #include "usb_descriptors.h"
-#include "jumptoboot.h"
+#include "utils/jumptoboot.h"
 #include "sysex.h"
 #include "config.h"
-
+#include "modes/mode.h"
+#include "modes/system/boot.h"
 
 
 // Declare Fuses for the ATmega32U4 ---------------------------------------------
@@ -100,7 +101,7 @@ uint16_t usb_packets_per_interval_max = 0;
 void EVENT_USB_Device_Connect(void)
 {
     // Indicate that USB is enumerating.
-	led_enable();
+	led_driver_enable();
 }
 
 // The device is no longer connected to a host.
@@ -123,8 +124,14 @@ void EVENT_USB_Device_ConfigurationChanged(void)
     }
 
     // Success. Enable the display and do the power on light show
-	led_enable();
+	led_driver_enable();
 	// power_on_lightshow();
+	
+	// Start boot animation if we're in boot mode
+	if (mode == MODE_BOOT) {
+		boot_start_animation();
+	}
+	
 	// Now enable watchdog timer
 	wdt_enable(WDTO_2S);
 }
@@ -136,45 +143,6 @@ void EVENT_USB_Device_UnhandledControlRequest(void)
     // Let the LUFA MIDI Class handle this request.
     MIDI_Device_ProcessControlRequest(g_midi_interface_info);
 }
-
-// ***************************
-// This code is here to debug the LED freeze when connected but not being
-// listened to under Windows.
-// **************************
-//
-// bool My_Device_ReceiveEventPacket(
-//         USB_ClassInfo_MIDI_Device_t* const MIDIInterfaceInfo,
-//         MIDI_EventPacket_t* const Event)
-// {
-//     if (USB_DeviceState != DEVICE_STATE_Configured) {
-//         led_set_state(0x0001);
-//         return false;
-//     }
-//
-//     Endpoint_SelectEndpoint(MIDIInterfaceInfo->Config.DataOUTEndpointNumber);
-//
-//     led_set_state(0x0002);
-//
-//     if (!(Endpoint_IsReadWriteAllowed())) {
-//         led_set_state(0x0004);
-//         return false;
-//     }
-//
-//     Endpoint_Read_Stream_LE(Event,
-//                             sizeof(MIDI_EventPacket_t),
-//                             NO_STREAM_CALLBACK);  // !mark: NO_STREAM_CALLBACK? What are the other options? USB Config...
-//
-//     led_set_state(0x0008);
-//
-//     if (!(Endpoint_IsReadWriteAllowed())) {
-//         led_set_state(0x0010);
-//         Endpoint_ClearOUT();
-//     }
-//
-//     led_set_state(0x0020);
-//
-//     return true;
-// }
 
 // The MIDI processing task.
 //
@@ -222,8 +190,7 @@ void Midifighter_GetIncomingUsbMidiMessages(void) {
 		if (usb_rx_packets >= USB_RX_PACKET_LIMIT) {
 			break;
 		}
-	    else if (!MIDI_Device_ReceiveEventPacket(g_midi_interface_info,
-	    &input_event)) {  // 
+	    else if (!MIDI_Device_ReceiveEventPacket(g_midi_interface_info, &input_event)) {  // 
 			usb_rx_fail_count += 1;
 			if (usb_rx_fail_count >= USB_RX_FAIL_LIMIT) {
 				break;
@@ -233,7 +200,6 @@ void Midifighter_GetIncomingUsbMidiMessages(void) {
 			}
 			// - we add this delay so that we may get a full frame of leds (often 4 or 5 usb packets) at once.
 		} else {
-			//Endpoint_ClearOUT(); // !Windows Test: Clear Endpoing Manually (no effect)
 			usb_rx_packets += 1;
 			usb_rx_fail_count = 0;
 			
@@ -299,109 +265,36 @@ void Midifighter_GetIncomingUsbMidiMessages(void) {
 			break;
 
 			 // MIDI Feedback and MIDI Sysex Rx
-			case 0x9 :
+			case 0x9:
 			{
-				 // A NoteOn event was found, if the Channel is within the
-				// correct range update the stored velocity
 				uint8_t channel = input_event.Data1 & 0x0f;
-				if (channel == G_EE_MIDI_CHANNEL) { // Bank 1: key_id 0-63
-					uint8_t note = input_event.Data2;
-					uint8_t velocity = input_event.Data3;
-					uint8_t key_id = note - MIDI_BASENOTE;
-					if (key_id < NUM_BUTTONS) {
-						fastrgb_ableton_single(key_id, velocity);
-						#if ENABLE_NOTE_OFF_FEEDBACK_DELAY > 0
-						  g_midi_note_off_counter[key_id] = 0; // clear anti-flicker timeout
-						#endif						
-						#if ENABLE_TEST_OUT_NOTE_COUNTERS > 0
-						note_on_count += 1;
-						#endif
-					}
-				} else if (channel == G_EE_MIDI_CHANNEL + 1) { // Bank 1: key_id 0-63
-					uint8_t note = input_event.Data2;
-					uint8_t velocity = input_event.Data3;
-					uint8_t key_id = note - MIDI_BASENOTE;
-					if (key_id < NUM_BUTTONS) {
-						fastrgb_ableton_single_led(key_id, 0, velocity);
-						#if ENABLE_NOTE_OFF_FEEDBACK_DELAY > 0
-						  g_midi_note_off_counter[key_id] = 0; // clear anti-flicker timeout
-						#endif						
-						#if ENABLE_TEST_OUT_NOTE_COUNTERS > 0
-						note_on_count += 1;
-						#endif
-					}
-				} else if (channel == G_EE_MIDI_CHANNEL + 2) { // Bank 1: key_id 0-63
-					uint8_t note = input_event.Data2;
-					uint8_t velocity = input_event.Data3;
-					uint8_t key_id = note - MIDI_BASENOTE;
-					if (key_id < NUM_BUTTONS) {
-						fastrgb_ableton_single_led(key_id, 1, velocity);
-						#if ENABLE_NOTE_OFF_FEEDBACK_DELAY > 0
-						  g_midi_note_off_counter[key_id] = 0; // clear anti-flicker timeout
-						#endif						
-						#if ENABLE_TEST_OUT_NOTE_COUNTERS > 0
-						note_on_count += 1;
-						#endif
-					}
+
+				uint8_t note = input_event.Data2;
+				uint8_t velocity = input_event.Data3;
+				uint8_t key_id = note - MIDI_BASENOTE;
+
+				if (key_id < NUM_BUTTONS) {
+					(*mode_midi_event[mode])(0, 0x9, channel, key_id, velocity);
+
+					#if ENABLE_NOTE_OFF_FEEDBACK_DELAY > 0
+						g_midi_note_off_counter[key_id] = 0; // clear anti-flicker timeout
+					#endif	
 				}
 			}
 			break;
 			case 0x8 :
 			{
-				// A NoteOff event, so record a zero in the MIDI
-				// keystate. Yes, a noteoff can have a "velocity",
-				// but we're relying on the keystate to be zero when
-				// we have a noteoff, otherwise the LEDs won't match
-				// the state when we come to calculate them.
 				uint8_t channel = input_event.Data1 & 0x0f;
-				if (channel == G_EE_MIDI_CHANNEL) { // Bank 1: key_id 0-63
-					uint8_t note = input_event.Data2;
-					//uint8_t velocity = input_event.Data3;
-					uint8_t key_id = note - MIDI_BASENOTE;
-					if (key_id < NUM_BUTTONS) {
-						#if ENABLE_NOTE_OFF_FEEDBACK_DELAY <= 0
-						fastrgb_single_unsafe(key_id, 0, 0, 0);
-						#else // NOTE OFF Feedback delay enabled
-						  uint8_t time_8bit = (system_time_ms & 0x7F) | 0x80;
-						  g_midi_note_off_counter[key_id] = time_8bit; // timer for anti-flicker (wait a little bit for noteon)
-						#endif
-						
-						#if ENABLE_TEST_OUT_NOTE_COUNTERS > 0
-						  note_off_count += 1;
-						#endif
-					}
-				} else if (channel == G_EE_MIDI_CHANNEL + 1) { // Bank 1: key_id 0-63
-					uint8_t note = input_event.Data2;
-					//uint8_t velocity = input_event.Data3;
-					uint8_t key_id = note - MIDI_BASENOTE;
-					if (key_id < NUM_BUTTONS) {
-						#if ENABLE_NOTE_OFF_FEEDBACK_DELAY <= 0
-						fastrgb_single_led_unsafe(key_id, 0, 0, 0, 0);
-						#else // NOTE OFF Feedback delay enabled
-						  uint8_t time_8bit = (system_time_ms & 0x7F) | 0x80;
-						  g_midi_note_off_counter[key_id] = time_8bit; // timer for anti-flicker (wait a little bit for noteon)
-						#endif
-						
-						#if ENABLE_TEST_OUT_NOTE_COUNTERS > 0
-						  note_off_count += 1;
-						#endif
-					}
-				} else if (channel == G_EE_MIDI_CHANNEL + 2) { // Bank 1: key_id 0-63
-					uint8_t note = input_event.Data2;
-					//uint8_t velocity = input_event.Data3;
-					uint8_t key_id = note - MIDI_BASENOTE;
-					if (key_id < NUM_BUTTONS) {
-						#if ENABLE_NOTE_OFF_FEEDBACK_DELAY <= 0
-						fastrgb_single_led_unsafe(key_id, 1, 0, 0, 0);
-						#else // NOTE OFF Feedback delay enabled
-						  uint8_t time_8bit = (system_time_ms & 0x7F) | 0x80;
-						  g_midi_note_off_counter[key_id] = time_8bit; // timer for anti-flicker (wait a little bit for noteon)
-						#endif
-						
-						#if ENABLE_TEST_OUT_NOTE_COUNTERS > 0
-						  note_off_count += 1;
-						#endif
-					}
+				uint8_t note = input_event.Data2;
+				uint8_t key_id = note - MIDI_BASENOTE;
+
+				if (key_id < NUM_BUTTONS) {
+					#if ENABLE_NOTE_OFF_FEEDBACK_DELAY <= 0
+					(*mode_midi_event[mode])(0, 0x8, channel, key_id, 0);
+					#else // NOTE OFF Feedback delay enabled
+						uint8_t time_8bit = (system_time_ms & 0x7F) | 0x80;
+						g_midi_note_off_counter[key_id] = time_8bit; // timer for anti-flicker (wait a little bit for noteon)
+					#endif
 				}
 			}
 			break;
@@ -438,19 +331,7 @@ void Midifighter_GetIncomingUsbMidiMessages(void) {
 //# DISABLE_LUFA_2015_LARGE_PACKET_UPGRADE
 
 void Midifighter_Task(void)
-{
-	#if ENABLE_TEST_OUT_MAINLOOP_COUNT > 0
-	#warning TEST: MAINLOOP Counter Output is ENABLED!
-	static uint16_t loop_count = 0;
-	static uint16_t last_sent_loop_count = 0;
-	loop_count += 1;
-	if (loop_count-last_sent_loop_count >= 100) {
-		last_sent_loop_count = loop_count;
-		midi_stream_raw_cc(9, (loop_count >> 7) & 0x7F, loop_count & 0x7F);
-		//midi_stream_raw_cc(11, system_time_ms >> 7 & 0x7F, system_time_ms & 0x7F); // System Time Check
-	}
-	#endif
-	
+{	
     // If the Midifighter is not completely enumerated by the USB Host,
     // don't go any further - no updating of LEDs, no reading from
     // endpoints, we wait for the USB to connect.
@@ -491,8 +372,12 @@ void Midifighter_Task(void)
 			Midifighter_GetIncomingUsbMidiMessages();
 			#endif
             if (g_key_down & key_bit) {
-                // There's a key down, put a NoteOn and/or CC event into the stream.
-                uint8_t note = midi_64_key_to_note(i);
+                // Button is down, pass it to the Mode system to handle
+				(*mode_button_event[mode])(i, true);
+                
+				
+				/*
+				uint8_t note = midi_64_key_to_note(i);
 
 				if (G_EE_MIDI_OUTPUT_MODE < MIDI_OUTPUT_MODE_CCS_ONLY) {
 				    midi_stream_note(note, true);
@@ -502,10 +387,14 @@ void Midifighter_Task(void)
                 {
 				    midi_stream_raw_cc(G_EE_MIDI_CHANNEL,note,127);
                 }
+				*/
             }
             if (g_key_up & key_bit) {
                 // There's a key up, put a NoteOff event onto the stream.
-                uint8_t note = midi_64_key_to_note(i);
+				(*mode_button_event[mode])(i, false);
+
+				/*
+				uint8_t note = midi_64_key_to_note(i);
 				// Adjust channel
 				uint8_t channel = G_EE_MIDI_CHANNEL;
 				// Output Note Message
@@ -517,6 +406,7 @@ void Midifighter_Task(void)
                 {
 					midi_stream_raw_cc(G_EE_MIDI_CHANNEL,note,0);
 				}
+				*/
             }
             key_bit <<= 1;
         }
@@ -535,8 +425,7 @@ void Midifighter_Task(void)
 
 	default_display_run();
 
-	// Send Data to the LEDs
-	led_update_pixels(g_display_buffer);
+	led_driver_update_pixels(g_display_buffer);
 	
 	watchdog_flag = true;
 }
@@ -567,8 +456,8 @@ int main(void)
 
 	// Start up the subsystems.
     eeprom_setup();   // setup global settings from the EEPROM
-    led_setup();      // startup the LED chips.
-	led_disable();	  // and disable display until USB is connected
+    led_driver_setup();      // startup the LED chips.
+	led_driver_disable();	  // and disable display until USB is connected
     key_setup();      // startup the key debounce interrupt.
     midi_setup();     // startup the MIDI keystate and LUFA MIDI Class interface.
 	fastrgb_clear();  // clear the fastrgb buffer
@@ -592,7 +481,7 @@ int main(void)
         //  # . . #
 
         //led_set_state(0xA5A5,0x00ffffff);
-		led_set_state_dfu();  // !mark: firmware update soft brick?
+		led_driver_set_state_dfu();  // !mark: firmware update soft brick?
 		Jump_To_Bootloader();
 
         // We should never reach here. If you see this LED pattern: then
@@ -612,11 +501,10 @@ int main(void)
     USB_Init();
     // enable global interrupts.
     sei();
-    // Start Device With Sleep Animation Enabled
-	sleep_minute_counter = G_EE_SLEEP_TIME;
+
+	mode_switch(MODE_BOOT);
 	
-    // Enter an endless loop. (the main loop)
-    for(;;) {
+    for(;;) { // <- main loop
         // Read keys and motion tracking for User and MIDI events to process,
         // setting LEDs to display the resulting state.
 		Midifighter_Task();
@@ -629,13 +517,17 @@ int main(void)
         // Update the USB state.
         USB_USBTask();
         
+        // Call mode timer event for animations (like boot animation)
+        if (mode_timer_event[mode]) {
+            (*mode_timer_event[mode])();
+        }
+        
 		// Reset the watch dog timer, dawg
 		if (watchdog_flag)
 		{
 			wdt_reset();
 			//!review: why ever not reset watchdog? watchdog_flag = false;
 		}		
-
     }
 }
 // -----------------------------------------------------------------------------

@@ -20,8 +20,8 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 	*/
 
-#ifndef _LED_H_INCLUDED
-#define _LED_H_INCLUDED
+#ifndef _LED_DRIVER_H_INCLUDED
+#define _LED_DRIVER_H_INCLUDED
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -52,18 +52,18 @@ extern uint8_t one_minute_counter;
 extern uint8_t sleep_minute_counter;
 
 // Basic functions ------------------
-void led_setup(void);
-void led_disable(void);
-void led_enable(void);
-void led_update_pixels(uint8_t *buffer);
+void led_driver_setup(void);
+void led_driver_disable(void);
+void led_driver_enable(void);
+void led_driver_update_pixels(uint8_t *buffer);
 
 // for compatibility with original MF code
-void led_update_pixel_group0(uint8_t *buffer);
-void led_update_pixel_group1(uint8_t *buffer);
-void led_update_pixel_group2(uint8_t *buffer);
-void led_update_pixel_group3(uint8_t *buffer);
-void led_set_state(uint16_t new_state, uint32_t color);
-void led_set_state_dfu(void);
+void led_driver_update_pixel_group0(uint8_t *buffer);
+void led_driver_update_pixel_group1(uint8_t *buffer);
+void led_driver_update_pixel_group2(uint8_t *buffer);
+void led_driver_update_pixel_group3(uint8_t *buffer);
+void led_driver_set_state(uint16_t new_state, uint32_t color);
+void led_driver_set_state_dfu(void);
 
 // Background effects ----------------
 void rainbow_setup(void);
@@ -74,4 +74,4 @@ bool rainbow_run(uint8_t *buffer);
 
 // -----------------------------------
 
-#endif // _LED_H_INCLUDED
+#endif // _LED_DRIVER_H_INCLUDED
